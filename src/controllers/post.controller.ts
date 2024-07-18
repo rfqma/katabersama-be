@@ -43,7 +43,7 @@ export const createPost = async (request: Request, response: Response) => {
     return response.status(422).send({
       status: false,
       code: 422,
-      message: `failed, ${error}`,
+      message: error,
       data: {},
     });
   }
