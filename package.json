@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx tsc -w",
+    "start:dev": "npx tsc -w",
     "dev": "npx nodemon",
-    "build": "tsc"
+    "build": "tsc",
+    "start:prod": "node build/index.js"
   },
   "author": "Rifqi Maulana",
   "license": "ISC",
