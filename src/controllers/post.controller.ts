@@ -15,7 +15,13 @@ import {
 import { v4 as uuidv4 } from "uuid";
 
 export const createPost = async (request: Request, response: Response) => {
+  const user = response.locals.user;
+
   request.body.post_id = uuidv4();
+  request.body.author = {
+    name: user._doc.name,
+    username: user._doc.username,
+  };
 
   const { error, value } = createPostValidation(request.body);
   if (error) {
