@@ -1,14 +1,14 @@
 import { Application, Router } from "express";
 import { HelloWorldRouter } from "./hello-world";
-import { WorldHelloRouter } from "./world-hello";
 import { WhoAmIRouter } from "./whoami";
 import { PostsRouter } from "./post.route";
+import { UsersRouter } from "./user.route";
 
 const _routes: Array<[string, Router]> = [
   ["/hello-world", HelloWorldRouter],
-  ["/world-hello", WorldHelloRouter],
   ["/whoami", WhoAmIRouter],
   ["/posts", PostsRouter],
+  ["/users", UsersRouter],
 ];
 
 export const routes = (app: Application) => {

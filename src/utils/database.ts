@@ -8,7 +8,6 @@ mongoose
     logger.info("connected to mongodb");
   })
   .catch((error) => {
-    logger.info("error connecting to mongodb");
-    logger.error(error);
+    logger.error(`error connecting to mongodb = ${error}`);
     process.exit(1);
   });
