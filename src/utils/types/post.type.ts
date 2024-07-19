@@ -4,7 +4,9 @@ export default interface PostProps {
   title: string;
   description: string;
   content: string;
+  thumbnail: string;
   author: {
+    user_id: string;
     name: string;
     username: string;
   };

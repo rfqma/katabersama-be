@@ -24,7 +24,15 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    thumbnail: {
+      type: String,
+      required: true,
+    },
     author: {
+      user_id: {
+        type: String,
+        required: true,
+      },
       name: {
         type: String,
         required: true,

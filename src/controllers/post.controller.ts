@@ -13,28 +13,57 @@ import {
   deletePostByIdFromDB,
 } from "../services/post.service";
 import { v4 as uuidv4 } from "uuid";
+import { s3 } from "../utils/s3";
+import CONFIG from "../config/env";
+import slug from "slug";
 
 export const createPost = async (request: Request, response: Response) => {
   const user = response.locals.user;
 
   request.body.post_id = uuidv4();
+  request.body.slug = `${slug(request.body.title, { lower: true })}-${
+    user._doc.username
+  }`;
   request.body.author = {
+    user_id: user._doc.user_id,
     name: user._doc.name,
     username: user._doc.username,
   };
 
-  const { error, value } = createPostValidation(request.body);
-  if (error) {
-    logger.error("create /posts failed = ", error.details[0].message);
-    return response.status(422).send({
-      status: false,
-      code: 422,
-      message: `failed, ${error.details[0].message}`,
-      data: {},
-    });
+  //upload thumbnail
+  const file = (request.files as { [key: string]: any })["thumbnail"] || null;
+  if (!file) {
+    return response.sendStatus(422);
   }
 
+  const { name, mimetype, size, data } = file;
+  const fileContent = Buffer.from(data, "binary");
+
   try {
+    await s3
+      .putObject({
+        Body: fileContent,
+        Bucket: "katabersama-bucket",
+        Key: `${user._doc.username}-${request.body.slug}-${name}`,
+        ContentType: mimetype,
+        ContentDisposition: "inline",
+      })
+      .promise();
+
+    request.body.thumbnail = `${CONFIG.CONTABO_STORAGE_BUCKET_URL_PUBLIC}/${user._doc.username}-${request.body.slug}-${name}`;
+    // end of upload thumbnail
+
+    const { error, value } = createPostValidation(request.body);
+    if (error) {
+      logger.error("create /posts failed = ", error.details[0].message);
+      return response.status(422).send({
+        status: false,
+        code: 422,
+        message: `failed, ${error.details[0].message}`,
+        data: {},
+      });
+    }
+
     await createPostToDB(value);
 
     logger.info("create /posts success");
@@ -46,9 +75,9 @@ export const createPost = async (request: Request, response: Response) => {
     });
   } catch (error) {
     logger.error("create /posts failed = ", error);
-    return response.status(422).send({
+    return response.status(500).send({
       status: false,
-      code: 422,
+      code: 500,
       message: error,
       data: {},
     });
@@ -178,9 +207,28 @@ export const updatePostById = async (request: Request, response: Response) => {
     params: { post_id },
   } = request;
 
+  const user = response.locals.user;
+  const updatePostRequestedBy = user._doc.user_id;
+
+  const postById = await getPostByIdFromDB(post_id);
+
+  if (postById?.author?.user_id !== updatePostRequestedBy) {
+    logger.error("update /posts/:post_id failed = user not allowed");
+    return response.status(401).send({
+      status: false,
+      code: 401,
+      message: "failed, user not allowed",
+      data: {},
+    });
+  }
+
+  request.body.slug = `${slug(request.body.title, { lower: true })}-${
+    user._doc.username
+  }`;
+
   const { error, value } = updatePostValidation(request.body);
   if (error) {
-    logger.error("update /posts failed = ", error.details[0].message);
+    logger.error("update /posts/:post_id failed = ", error.details[0].message);
     return response.status(422).send({
       status: false,
       code: 422,
@@ -224,6 +272,21 @@ export const deletePostById = async (request: Request, response: Response) => {
   const {
     params: { post_id },
   } = request;
+
+  const user = response.locals.user;
+  const deletePostRequestedBy = user._doc.user_id;
+
+  const postById = await getPostByIdFromDB(post_id);
+
+  if (postById?.author?.user_id !== deletePostRequestedBy) {
+    logger.error("delete /posts/:post_id failed = user not allowed");
+    return response.status(401).send({
+      status: false,
+      code: 401,
+      message: "failed, user not allowed",
+      data: {},
+    });
+  }
 
   try {
     const results = await deletePostByIdFromDB(post_id);

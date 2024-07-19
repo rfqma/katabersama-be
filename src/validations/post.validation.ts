@@ -10,7 +10,9 @@ export const createPostValidation = (payload: PostProps) => {
     title: Joi.string().required(),
     description: Joi.string().required(),
     content: Joi.string().required(),
+    thumbnail: Joi.string().required(),
     author: Joi.object({
+      user_id: Joi.string().required(),
       name: Joi.string().required(),
       username: Joi.string().required(),
     }),
@@ -21,10 +23,13 @@ export const createPostValidation = (payload: PostProps) => {
 
 export const updatePostValidation = (payload: PostProps) => {
   const schema = Joi.object({
-    slug: Joi.string().allow("", null),
+    slug: Joi.string()
+      .regex(/^[a-z0-9-]*$/)
+      .required(),
     title: Joi.string().allow("", null),
     description: Joi.string().allow("", null),
     content: Joi.string().allow("", null),
+    thumbnail: Joi.string().allow("", null),
   });
 
   return schema.validate(payload);

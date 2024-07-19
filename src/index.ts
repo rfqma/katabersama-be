@@ -4,6 +4,8 @@ import { logger } from "./utils/logger";
 import bodyParser from "body-parser";
 import cors from "cors";
 import { deserializeUserToken } from "./middleware/user";
+import fileUpload from "express-fileupload";
+import { s3 } from "./utils/s3";
 
 //connect db
 import "./utils/database";
@@ -26,6 +28,16 @@ app.use((request, response, next) => {
 
 //check accessToken
 app.use(deserializeUserToken);
+
+//handle incoming file
+app.use(
+  fileUpload({
+    createParentPath: true,
+  })
+);
+
+//connect to s3
+s3;
 
 routes(app);
 
